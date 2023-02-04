@@ -9,23 +9,19 @@ app = Flask(__name__)
 def writeTag():
     findPrefix  = request.args.get( 'findPrefix', default=None )
     writePrefix = request.args.get( 'writePrefix', default=None )
+    passwordStr = request.args.get( 'password', default="00000000" )
+    
+    password = []
+    for i in range( 0, len( passwordStr ), 2 ):
+        password.append( int( f'0x{passwordStr[i]}{passwordStr[i+1]}', base=16 ) )
 
     reader = DesktopReader()
-    ret = reader.writeTag( findPrefix=findPrefix, writePrefix=writePrefix )
+    ret = reader.writeTag( findPrefix=findPrefix, writePrefix=writePrefix, password=password )
     if isinstance( ret, str ):
         return jsonify(
             {
                 'status': False,
                 'message': ret,
-            }
-        )
-    endTags = reader.readTagsWithRetry()
-
-    if len( endTags ) != 1 or endTags[0] != ret[ 1 ]:
-        return jsonify(
-            {
-                'status': False,
-                'message': 'There is problem on writing tag'
             }
         )
     
@@ -76,6 +72,46 @@ def readTag():
             {
                 'status': True,
                 'tag': stringifyHex( tags[ 0 ] ),
+            }
+        )
+
+@app.route('/setPassword')
+def setPassword():
+    prefix  = request.args.get( 'prefix', default=None )
+    oldPasswordStr = request.args.get( 'oldPassword', default="00000000" )
+    oldPassword = []
+    for i in range( 0, len( oldPasswordStr ), 2 ):
+        oldPassword.append( int( f'0x{oldPasswordStr[i]}{oldPasswordStr[i+1]}', base=16 ) )
+
+    reader = DesktopReader()
+    tags = reader.readTags( prefix=prefix )
+    if len( tags ) > 1:
+        return jsonify({
+            'status': False,
+            'message': 'There is more than one tag with specified prefix'
+        })
+    
+    if len( tags ) == 0:
+        return jsonify({
+            'status': False,
+            'message': 'There is no tag with specified prefix'
+        })
+
+    tag = tags[ 0 ]
+
+    reader.unlockTag( tag, oldPassword )
+    if not reader.setPassword( tag, oldPassword ) or not reader.lockTag( tag ):
+        return jsonify(
+            {
+                'status': False,
+                'message': f'Tag could not locked'
+            }
+        )
+    else:
+        return jsonify(
+            {
+                'status': True,
+                'message': f'Password is changed for {stringifyHex(tag)}'
             }
         )
 

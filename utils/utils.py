@@ -1,4 +1,5 @@
 import hashlib
+from tabulate import tabulate
 
 def getCheckSum( arr ):
     sum = 0
@@ -14,6 +15,9 @@ def prepareCommand( arr, deviceId=1 ):
 def hex( x ):
     return '{0:0{1}X}'.format( x, 2 )
 
+def Hex( x ):
+    return '0x{0:0{1}X}'.format( x, 2 )
+
 def stringifyHex( arr ):
     return ' '.join( [ hex( x ) for x in arr ] )
 
@@ -27,10 +31,10 @@ def splitCommands( lst, seperator ):
         try:
             if lst[ i ] == seperator:
                 length = lst[ i + 1 ]
-                command = lst[ i + 1 : i + 1 + length ]
-                if len( command ) == length:
+                command = lst[ i : i + length + 2 ]
+                if len( command ) == length + 2:
                     res.append( command )
-                i = i + 1 + length
+                i = i + length + 2
             else:
                 i += 1
         except:
@@ -58,3 +62,31 @@ def filterWithPrefix( tags, prefix, encodedLength ):
         if startswith( tag, code ):
             res.append( tag )
     return res
+
+def isPrimitive(obj):
+    return not hasattr(obj, '__dict__')
+
+def tabulateObjects( objList ):
+    keys = set()
+    for obj in objList:
+        for key, value in obj.__dict__.items():
+            if key.upper() == key:
+                continue
+            if not isPrimitive( value ):
+                continue
+            keys.add( key )
+    
+    keys = sorted( list( keys ) )
+    values = []
+    for obj in objList:
+        value = []
+        for key in keys:
+            v = getattr( obj, key, '' )
+            if isinstance( v, int ) and not isinstance( v, bool ):
+                v = hex( v )
+            if isinstance( v, list ) and isinstance( v[0], int ):
+                v = stringifyHex( v )
+            value.append( v )
+        values.append( value )
+    
+    print( tabulate( values, headers=keys ) )

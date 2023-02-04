@@ -1,4 +1,5 @@
 import serial
+from utils.utils import stringifyHex
 
 class SerialCom( serial.Serial ):
     def __init__( self, *args, portName=None, baudrate=None, portConfigFile=None, **kwargs ):
