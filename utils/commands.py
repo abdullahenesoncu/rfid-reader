@@ -6,6 +6,7 @@ import json
 ERROR_CODES = json.load( open( 'data/error_codes.json', 'r' ) )
 ID2COMMANDS = {
     0X74: "SET_WORK_ANTENNA",
+    0x76: "SET_RF_OUTPUT_POWER",
     0X80: "INVENTORY",
     0X81: "READ",
     0X82: "WRITE",
@@ -26,7 +27,7 @@ class Command( object ):
     ADDRESS = 0x01
     COMMAND_CODE = None
     MULTILINE_OUTPUT = False
-    STABILIZATION_TIME = 0.5
+    STABILIZATION_TIME = 0.6
 
     def __init__( self, serialCom, **kwargs ):
         self.serialCom = serialCom
@@ -268,3 +269,27 @@ class LockCommand( Command ):
             if self.menBank == 0x00 or self.menBank == 0x01:
                 result.data = result.data[ 2 : ]
             return result
+
+class SetRFOutputPowerCommand( Command ):
+    COMMAND_CODE = 0x76
+    MULTILINE_OUTPUT = False
+
+    def __init__( self, serialCom, power ):
+        super().__init__( 
+            serialCom,
+            power=power,
+        )
+    
+    def validate( self ):
+        assert 0x12<=self.power<=0x1A
+    
+    def prepare( self, cmd=[] ):
+        cmd += [ self.power ]
+        cmd = super().prepare( cmd )
+        return cmd
+    
+    def interpretPacket( self, packet ):
+        return Result(
+            status=( packet[ 4 ] == 0x10 ),
+            errorCode=packet[ 4 ],
+        )
