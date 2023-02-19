@@ -45,6 +45,9 @@ class Command( object ):
         cmd += [ getCheckSum( cmd ) ]
         return cmd
     
+    def endWithPacket( self, packet ):
+        return False
+    
     def getOutputs( self ):
         results = []
         starttime = time.time()
@@ -55,14 +58,16 @@ class Command( object ):
                 data = self.serialCom.read( self.serialCom.in_waiting )
                 packets = splitCommands( [ x for x in data ], self.HEAD )
                 failed = False
+                end = False
                 for packet in packets:
+                    end = end or self.endWithPacket( packet )
                     interprettedPacket = self.interpretPacket( packet )
                     if not interprettedPacket:
                         continue
                     results.append( interprettedPacket )
                     if not interprettedPacket.status:
                         failed = True
-                if not self.MULTILINE_OUTPUT or failed:
+                if not self.MULTILINE_OUTPUT or failed or end:
                     break
             time.sleep( 0.01 )
         
@@ -186,6 +191,9 @@ class RealTimeInventoryCommand( Command ):
                 status=True,
                 epcData=packet[ 7 : -2 ]
             )
+    
+    def endWithPacket( self, packet ):
+        return packet[ 1 ] == 0x04 or packet[ 1 ] == 0x0A
 
 class SetWorkAntennaCommand( Command ):
     COMMAND_CODE = 0x74

@@ -14,12 +14,10 @@ def handleCountings():
         countingName = data[ 'countingName' ]
         jsonManager = JsonManager( os.path.join( 'countings', countingName + '.json' ) )
         reader = DesktopReader()
-        reader.setPower( 0x1A )
         tags = reader.readTags()
-        reader.setPower( 0x12 )
         for tag in tags:
             jsonManager[ stringifyHex( tag ) ] = { 'status': True }
 
 scheduler = BackgroundScheduler()
-scheduler.add_job(func=handleCountings, trigger='interval', seconds=1)
+scheduler.add_job(func=handleCountings, trigger='interval', seconds=0.3)
 scheduler.start()
