@@ -12,7 +12,6 @@ class DesktopReader( object ):
     TAG_LENGTH = 6 # words
     TAG_START = 2 # words
     TAG_LABEL_LENGTH = 3 # words
-    STABILIZATION_TIME = 0.6 # seconds
 
     password = [ 0x17, 0x03, 0x77, 0xF5 ]
 
@@ -72,6 +71,9 @@ class DesktopReader( object ):
         tags = [ str2tag( tag ) for tag in tags ]
 
         return filterWithPrefix( tags, prefix, self.TAG_LABEL_LENGTH * 2 )
+
+    def setPower( self, power ):
+        SetRFOutputPowerCommand( self.serialCom, power ).run()
     
     def doWithRetry( self, func, *args, retries=3, **kwargs ):
         while retries > 0:
