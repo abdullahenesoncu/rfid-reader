@@ -1,6 +1,6 @@
 {
     "desktopReader": {
-        "port": "COM3",
+        "port": "COM0",
         "baudrate": 115200,
         "status": "open"
     }
